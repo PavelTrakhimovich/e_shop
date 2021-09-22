@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
+from django.urls import reverse
 
 User = get_user_model()
 #используем того юзера который указан у нас в settings.AUTH_USER_MODEL
@@ -12,6 +13,10 @@ User = get_user_model()
 #cart
 #order
 #customer
+
+def get_url_product(obj, viewname):
+    ct_model = obj.__class__._meta.model_name
+    return reverse(viewname, kwargs={'ct_model':ct_model, 'slug' : obj.slug})
 
 
 class LatestProductManager:
@@ -74,6 +79,9 @@ class Notebook(Product):
     def __str__(self):
         return "{} : {}".format(self.category.name, self.title)
 
+    def get_absolute_url(self):
+        return get_url_product(self, 'product_detail')
+    
 
 class SmartPhone(Product):
 
@@ -89,6 +97,9 @@ class SmartPhone(Product):
 
     def __str__(self):
         return "{} : {}".format(self.category.name, self.title)
+
+    def get_absolute_url(self):
+        return get_url_product(self, 'product_detail')
 
 
 class CartProduct(models.Model):
