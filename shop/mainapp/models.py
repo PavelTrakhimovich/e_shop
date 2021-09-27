@@ -14,6 +14,11 @@ User = get_user_model()
 #order
 #customer
 
+
+def get_models_for_count(*model_names):
+    return [models.Count(model_name) for model_name in model_names]
+
+
 def get_url_product(obj, viewname):
     ct_model = obj.__class__._meta.model_name
     return reverse(viewname, kwargs={'ct_model':ct_model, 'slug' : obj.slug})
@@ -42,10 +47,37 @@ class LatestProducts:
     objects = LatestProductManager()
 
 
+class CategoryManager(models.Manager):
+
+    CATEGORY_NAME_COUNT_NAME = {
+        'NoteBooks' : 'notebook__count',
+        'SmartPhone' : 'smartphone__count'
+    }
+
+    def get_queryset(self):
+        return super().get_queryset()
+
+    def get_categories_for_left_sidebar(self):
+        models = get_models_for_count('notebook', 'smartphone')
+        qs = list(self.get_queryset().annotate(*models))
+        data = [
+            dict(name=c.name, url=c.get_absolute_url(), count=getattr(c, self.CATEGORY_NAME_COUNT_NAME[c.name]))
+            for c in qs
+        ]
+        return data
+
+
+
+
 class Category(models.Model):
 
     name = models.CharField(max_length=255, verbose_name='Name Category')
     slug = models.SlugField(unique=True) #/category/nootebook <-- its slug
+    objects = CategoryManager()
+
+    def get_absolute_url(self):
+        return reverse('category_detail', kwargs={'slug':self.slug})
+    
 
     def __str__(self): # for admin
         return self.name
@@ -90,8 +122,8 @@ class SmartPhone(Product):
     resolution = models.CharField(max_length=255, verbose_name='Resolution')
     accum_volume = models.CharField(max_length=255, verbose_name='Accum volue')
     ram = models.CharField(max_length=255,verbose_name='RAM')
-    sd = models.BooleanField(default=True)
-    sd_volume_max = models.CharField(max_length=255, verbose_name='Max volume sdcard')
+    sd = models.BooleanField(default=True, verbose_name='Availability CD card')
+    sd_volume_max = models.CharField(max_length=255, null=True, blank=True, verbose_name='Max volume sdcard')
     main_cam_mp = models.CharField(max_length=255, verbose_name='MP of main camera')
     front_cam_mp = models.CharField(max_length=255, verbose_name='MP of front camera')
 
@@ -113,7 +145,7 @@ class CartProduct(models.Model):
     final_price = models.DecimalField( max_digits=9, decimal_places=2, verbose_name='Final price')
 
     def __str__(self):
-        return "Product {}".format(self.product.title)#для корзины
+        return "Product {}".format(self.content_object.title)#для корзины
 
 
 class Cart(models.Model):
@@ -122,6 +154,8 @@ class Cart(models.Model):
     prodeuct = models.ManyToManyField(CartProduct, blank=True, related_name='related_cart')
     total_products = models.PositiveBigIntegerField(default=0)#количество уникальных обьекстов в корзине
     final_price =  models.DecimalField( max_digits=9, decimal_places=2, verbose_name='Final price')
+    in_order = models.BooleanField(default=False)
+    for_anonymous_user = models.BooleanField(default=False)
 
     def __str__(self):
         return str(self.id)
