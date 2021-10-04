@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block content %}
+<h3 class="text_center mt-5 mb-5">Cart {% if not cart.products.count %}void{% endif %}
+<table class="table">
+  <thead>
+    <tr>
+      <th scope="col">Name</th>
+      <th scope="col">Image</th>
+      <th scope="col">Price</th>
+      <th scope="col">Number of items</th>
+      <th scope="col">Final price</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for item in cart.products.all   %}
+    <tr> 
+      <th scope="row">{{item.content_object.title}}</th>
+      <td class="w-25"><img scr="{{item.content_object.image.url}}"class="img-flud"</td>
+      <td>{{item.content_object.price}}</td>
+      <td>{{item.qty}}</td>
+      <td>{{item.final_price}}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{% endblock content %}
